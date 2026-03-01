@@ -253,7 +253,7 @@ data = for x <- 0..width, y <- 0..height, f <- 1..frames do
   }
 end
 
-Vl.new(width: 400, height: 400 * height/width, padding: 30)
+Vl.new()
 |> Vl.data_from_values(data)
 |> Vl.mark(:rect)
 |> Vl.param("frame", value: 1, bind: [input: :range, min: 1, max: frames, step: 1])
@@ -262,6 +262,38 @@ Vl.new(width: 400, height: 400 * height/width, padding: 30)
 |> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
   domain: [-1, 1], 
   scheme: "blues",
-}, legend:  %{orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
+}, legend:  %{height: 400, orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
+|> Vl.transform(filter: "datum.frame == frame")
+```
+
+```elixir
+img = Nx.add(
+  Nx.iota({20,64,1}) |> Nx.broadcast({20,64,64}),
+  Nx.iota({1,1,64}) |> Nx.broadcast({20,64,64})
+)  |> Nx.divide(500)
+
+imgData = Nx.to_list(img) 
+  |> Enum.with_index() 
+  |> Enum.flat_map(fn {frame, fi} -> 
+    frame
+     |> Enum.with_index() 
+      |> Enum.flat_map(fn 
+        {row, ri} -> Enum.with_index(row) |> Enum.map(fn {v, ci} -> 
+          %{x: ci, y: ri, color: v, frame: fi}  
+        end) 
+      end)
+  end)
+ 
+
+Vl.new(width: 400, height: 400)
+|> Vl.data_from_values(imgData)
+|> Vl.mark(:rect)
+|> Vl.param("frame", value: 0, bind: [input: :range, min: 0, max: elem(Nx.shape(img), 0)-1, step: 1])
+|> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
+|> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
+|> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
+  domain: [0,1],
+  scheme: "blues",
+}, legend:  %{height: 400, orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
 |> Vl.transform(filter: "datum.frame == frame")
 ```
