@@ -9,7 +9,7 @@ Mix.install([
   {:kino_vega_lite, "~> 0.1.9"},
   {:tucan, "~> 0.5.1"},
   {:kino_zoetrope, "~> 0.12.0"},
-    {:colorex, "~> 1.0"}
+  {:colorex, "~> 1.0"}
 ])
 
 Kino.nothing()
@@ -267,10 +267,23 @@ Vl.new()
 ```
 
 ```elixir
-img = Nx.add(
-  Nx.iota({20,64,1}) |> Nx.broadcast({20,64,64}),
-  Nx.iota({1,1,64}) |> Nx.broadcast({20,64,64})
-)  |> Nx.divide(500)
+dx = Nx.iota({64,1}) |> Nx.subtract(32) |> Nx.divide(32)
+dy = Nx.iota({1,64}) |> Nx.subtract(32) |> Nx.divide(32)
+dx2 = Nx.pow(dx, 2)
+dy2 = Nx.pow(dy, 2)
+rad = Nx.add(dx2, dy2) |> Nx.sqrt()
+angle = Nx.atan2(dy, dx)
+freq = Nx.iota({30,1,1}) 
+  |> Nx.divide(10) 
+  |> Nx.multiply(:math.pi)
+
+freq_sqrt = Nx.sqrt(freq)
+
+img = rad 
+  |> Nx.multiply(freq_sqrt) 
+  |> Nx.add(angle) 
+  |> Nx.subtract(freq) 
+  |> Nx.sin()
 
 imgData = Nx.to_list(img) 
   |> Enum.with_index() 
@@ -279,21 +292,49 @@ imgData = Nx.to_list(img)
      |> Enum.with_index() 
       |> Enum.flat_map(fn 
         {row, ri} -> Enum.with_index(row) |> Enum.map(fn {v, ci} -> 
-          %{x: ci, y: ri, color: v, frame: fi}  
+          %{x: ci, y: ri, color: v, frame: fi + 1}  
         end) 
       end)
   end)
  
 
-Vl.new(width: 400, height: 400)
+plot1 = Vl.new(width: 300, height: 300)
 |> Vl.data_from_values(imgData)
 |> Vl.mark(:rect)
-|> Vl.param("frame", value: 0, bind: [input: :range, min: 0, max: elem(Nx.shape(img), 0)-1, step: 1])
 |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
 |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
 |> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
-  domain: [0,1],
-  scheme: "blues",
+  domain: [-1,1],
+  scheme: [expr: "col"],
 }, legend:  %{height: 400, orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
 |> Vl.transform(filter: "datum.frame == frame")
+
+plot2 = Vl.new(width: 300, height: 300)
+|> Vl.data_from_values(imgData)
+|> Vl.mark(:rect)
+|> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
+|> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
+|> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
+  domain: [-1,1],
+  scheme: "greys",
+}, legend:  %{height: 400, orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
+|> Vl.transform(filter: "datum.frame == 10")
+
+
+Vl.new()
+|> Vl.concat([plot1, plot2])
+|> Vl.param("frame", value: 1, bind: [input: :range, min: 1, max: elem(Nx.shape(img), 0), step: 1])
+|> Vl.param("col", value: :viridis, bind: [input: :select, options: [
+  :accent, :category10, :category20, :category20b, :category20c, :observable10, 
+  :dark2, :paired, :pastel1, :pastel2, :set1, :set2, :set3, :tableau10, :tableau20, 
+   :blues, :tealblues, :teals, :greens, :browns, :oranges, :reds, :purples, :warmgreys, 
+   :greys, :viridis, :magma, :inferno, :plasma, :cividis, :turbo, :bluegreen, :bluepurple, 
+   :goldgreen, :goldorange, :goldred, :greenblue, :orangered, :purplebluegreen, 
+   :purpleblue, :purplered, :redpurple, :yellowgreenblue, :yellowgreen, :yelloworangebrown, 
+   :yelloworangered, :darkblue, :darkgold, :darkgreen, :darkmulti, :darkred, :lightgreyred, 
+   :lightgreyteal, :lightmulti, :lightorange, :lighttealblue, :blueorange, :brownbluegreen, 
+   :purplegreen, :pinkyellowgreen, :purpleorange, :redblue, :redgrey, :redyellowblue, 
+   :redyellowgreen, :spectral, :rainbow, :sinebow
+]])
+|> Vl.resolve(:scale, color: :independent)
 ```
