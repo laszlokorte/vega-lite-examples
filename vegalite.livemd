@@ -166,10 +166,10 @@ Vl.new(width: 400, height: 300)
 ```elixir
 Vl.new()
 |> Vl.data_from_url("https://vega.github.io/editor/data/cars.json")
-|> Vl.param("size", value: 20, bind: [input: :range, min: 100, max: 1000, step: 10])
-|> Vl.param("mpg", value: 0, bind: [input: :range, min: 0, max: 200, step: 1])
-|> Vl.param("ps", value: 0, bind: [input: :range, min: 0, max: 200, step: 1])
-|> Vl.param("color", value: "red", bind: [input: :color])
+|> Vl.param("size", value: 20, bind: [name: "Dot Size", input: :range, min: 100, max: 1000, step: 10])
+|> Vl.param("mpg", value: 0, bind: [name: "min M/G", input: :range, min: 0, max: 200, step: 1])
+|> Vl.param("ps", value: 0, bind: [name: "min PS", input: :range, min: 0, max: 200, step: 1])
+|> Vl.param("color", value: "red", bind: [name: "Dot Color", input: :color])
 |> Vl.mark(:circle, size: [expr: "size"], color: [expr: "color"])
 |> Vl.encode_field(:x, "Horsepower", selection: [expr: "choice"], type: :quantitative, scale: [domain: [0, 300]])
 |> Vl.encode_field(:y, "Miles_per_Gallon", type: :quantitative, scale: [domain: [0,50]])
@@ -230,12 +230,29 @@ plot_size = 300
 Vl.new(width: plot_size, height: plot_size, title: "Animated Gradient")
 |> Vl.data_from_values(data)
 |> Vl.mark(:rect)
-|> Vl.param("frame", value: 0, bind: [input: :range, min: 0, max: frames, step: 1])
+|> Vl.param("frame", value: 0, bind: [name: "Frame", input: :range, min: 0, max: frames, step: 1])
 |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
 |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
 |> Vl.encode(:color, field: :color, scale: nil)
 |> Vl.transform(filter: "datum.frame == frame")
 
+```
+
+```elixir
+color_schemes = [
+  :accent, :category10, :category20, :category20b, :category20c, :observable10, 
+  :dark2, :paired, :pastel1, :pastel2, :set1, :set2, :set3, :tableau10, :tableau20, 
+   :blues, :tealblues, :teals, :greens, :browns, :oranges, :reds, :purples, :warmgreys, 
+   :greys, :viridis, :magma, :inferno, :plasma, :cividis, :turbo, :bluegreen, :bluepurple, 
+   :goldgreen, :goldorange, :goldred, :greenblue, :orangered, :purplebluegreen, 
+   :purpleblue, :purplered, :redpurple, :yellowgreenblue, :yellowgreen, :yelloworangebrown, 
+   :yelloworangered, :darkblue, :darkgold, :darkgreen, :darkmulti, :darkred, :lightgreyred, 
+   :lightgreyteal, :lightmulti, :lightorange, :lighttealblue, :blueorange, :brownbluegreen, 
+   :purplegreen, :pinkyellowgreen, :purpleorange, :redblue, :redgrey, :redyellowblue, 
+   :redyellowgreen, :spectral, :rainbow, :sinebow
+]
+
+Kino.nothing()
 ```
 
 ```elixir
@@ -266,13 +283,15 @@ Vl.new(
 )
 |> Vl.data_from_values(data)
 |> Vl.mark(:rect)
-|> Vl.param("frame", value: 1, bind: [input: :range, min: 1, max: frames, step: 1])
 |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
 |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
 |> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
   domain: [-1, 1], 
-  scheme: "blues",
+  scheme: [expr: "col"],
 }, legend:  %{height: 400, orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
+|> Vl.param("frame", value: 1, bind: [name: "Frame", input: :range, min: 1, max: frames, step: 1])
+
+|> Vl.param("col", value: :blues, bind: [name: "Color Scheme", input: :select, options: color_schemes])
 |> Vl.transform(filter: "datum.frame == frame")
 ```
 
@@ -284,7 +303,7 @@ dx2 = Nx.pow(dx, 2)
 dy2 = Nx.pow(dy, 2)
 rad = Nx.add(dx2, dy2) |> Nx.sqrt()
 angle = Nx.atan2(dy, dx)
-freq = Nx.iota({30,1,1}) 
+freq = Nx.iota({70,1,1}) 
   |> Nx.divide(10) 
   |> Nx.multiply(:math.pi)
 
@@ -310,7 +329,7 @@ imgData = Nx.to_list(img)
 
 plot_size = 300
 
-plot1 = Vl.new(width: plot_size, height: plot_size)
+plot1 = Vl.new(width: plot_size, height: plot_size, title: "Dynamic Frame")
 |> Vl.data_from_values(imgData)
 |> Vl.mark(:rect)
 |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
@@ -321,7 +340,7 @@ plot1 = Vl.new(width: plot_size, height: plot_size)
 }, legend:  %{orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
 |> Vl.transform(filter: "datum.frame == frame")
 
-plot2 = Vl.new(width: plot_size, height: plot_size)
+plot2 = Vl.new(width: plot_size, height: plot_size, title: "Static Frame")
 |> Vl.data_from_values(imgData)
 |> Vl.mark(:rect)
 |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
@@ -334,23 +353,12 @@ plot2 = Vl.new(width: plot_size, height: plot_size)
 
 
 
-Vl.new(
+combined_plot = Vl.new(
   title: "Two images side by side",
   config: [legend: [gradient_length: plot_size]])
 |> Vl.concat([plot1, plot2])
-|> Vl.param("frame", value: 1, bind: [input: :range, min: 1, max: elem(Nx.shape(img), 0), step: 1])
-|> Vl.param("col", value: :viridis, bind: [input: :select, options: [
-  :accent, :category10, :category20, :category20b, :category20c, :observable10, 
-  :dark2, :paired, :pastel1, :pastel2, :set1, :set2, :set3, :tableau10, :tableau20, 
-   :blues, :tealblues, :teals, :greens, :browns, :oranges, :reds, :purples, :warmgreys, 
-   :greys, :viridis, :magma, :inferno, :plasma, :cividis, :turbo, :bluegreen, :bluepurple, 
-   :goldgreen, :goldorange, :goldred, :greenblue, :orangered, :purplebluegreen, 
-   :purpleblue, :purplered, :redpurple, :yellowgreenblue, :yellowgreen, :yelloworangebrown, 
-   :yelloworangered, :darkblue, :darkgold, :darkgreen, :darkmulti, :darkred, :lightgreyred, 
-   :lightgreyteal, :lightmulti, :lightorange, :lighttealblue, :blueorange, :brownbluegreen, 
-   :purplegreen, :pinkyellowgreen, :purpleorange, :redblue, :redgrey, :redyellowblue, 
-   :redyellowgreen, :spectral, :rainbow, :sinebow
-]])
+|> Vl.param("frame", value: 1, bind: [name: "Frame", input: :range, min: 1, max: elem(Nx.shape(img), 0), step: 1])
+|> Vl.param("col", value: :viridis, bind: [name: "Color Scheme", input: :select, options: color_schemes])
 |> Vl.resolve(:scale, color: :independent, stroke: :independent, fill: :independent)
 
 ```
