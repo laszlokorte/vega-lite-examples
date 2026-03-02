@@ -6,7 +6,7 @@ Mix.install([
   {:kino, "~> 0.18.0"},
   {:image, "~> 0.62.1"},
   {:vega_lite, "~> 0.1.11"},
-  {:kino_vega_lite, "~> 0.1.9"},
+  {:kino_vega_lite, "~> 0.1.13"},
   {:tucan, "~> 0.5.1"},
   {:kino_zoetrope, "~> 0.12.0"},
   {:colorex, "~> 1.0"}
@@ -185,14 +185,14 @@ Vl.new()
 ```elixir
 # Example: 3x3 image
 data = [
-  %{x: 0, y: 0, color: "blue"},
-  %{x: 1, y: 0, color: "red"},
-  %{x: 2, y: 0, color: "#0000ff"},
-  %{x: 0, y: 1, color: "#ffff00"},
-  %{x: 1, y: 1, color: "#ff00ff"},
-  %{x: 2, y: 1, color: "#00ffff"},
-  %{x: 0, y: 2, color: "#ffffff"},
-  %{x: 1, y: 2, color: "#888888"},
+  %{x: 0, y: 0, color: "#ffffff"},
+  %{x: 1, y: 0, color: "#55aa55"},
+  %{x: 2, y: 0, color: "#ff5555"},
+  %{x: 0, y: 1, color: "#ffff55"},
+  %{x: 1, y: 1, color: "#888888"},
+  %{x: 2, y: 1, color: "#5555ff"},
+  %{x: 0, y: 2, color: "#55ffff"},
+  %{x: 1, y: 2, color: "#ff55ff"},
   %{x: 2, y: 2, color: "#000000"}
 ]
 
@@ -202,6 +202,7 @@ Vl.new(width: 300, height: 300)
 |> Vl.encode(:x, field: :x, type: :ordinal)
 |> Vl.encode(:y, field: :y, type: :ordinal)
 |> Vl.encode(:color, field: :color, type: :nominal, scale: nil)
+
 ```
 
 ```elixir
@@ -224,7 +225,9 @@ data = for x <- 0..width, y <- 0..height, f <- 0..frames do
   }
 end
 
-Vl.new(width: 300, height: 300)
+plot_size = 300
+
+Vl.new(width: plot_size, height: plot_size, title: "Animated Gradient")
 |> Vl.data_from_values(data)
 |> Vl.mark(:rect)
 |> Vl.param("frame", value: 0, bind: [input: :range, min: 0, max: frames, step: 1])
@@ -232,6 +235,7 @@ Vl.new(width: 300, height: 300)
 |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
 |> Vl.encode(:color, field: :color, scale: nil)
 |> Vl.transform(filter: "datum.frame == frame")
+
 ```
 
 ```elixir
@@ -253,7 +257,13 @@ data = for x <- 0..width, y <- 0..height, f <- 1..frames do
   }
 end
 
-Vl.new()
+plot_size = 200
+
+Vl.new(
+  title: "Animated Sinc Wave", 
+  height: plot_size, width: plot_size*width/height, 
+  config: [legend: [gradient_length: plot_size]]
+)
 |> Vl.data_from_values(data)
 |> Vl.mark(:rect)
 |> Vl.param("frame", value: 1, bind: [input: :range, min: 1, max: frames, step: 1])
@@ -267,8 +277,9 @@ Vl.new()
 ```
 
 ```elixir
-dx = Nx.iota({64,1}) |> Nx.subtract(32) |> Nx.divide(32)
-dy = Nx.iota({1,64}) |> Nx.subtract(32) |> Nx.divide(32)
+rad = 12
+dx = Nx.iota({rad*2,1}) |> Nx.subtract(rad) |> Nx.divide(rad)
+dy = Nx.iota({1,rad*2}) |> Nx.subtract(rad) |> Nx.divide(rad)
 dx2 = Nx.pow(dx, 2)
 dy2 = Nx.pow(dy, 2)
 rad = Nx.add(dx2, dy2) |> Nx.sqrt()
@@ -296,9 +307,10 @@ imgData = Nx.to_list(img)
         end) 
       end)
   end)
- 
 
-plot1 = Vl.new(width: 300, height: 300)
+plot_size = 300
+
+plot1 = Vl.new(width: plot_size, height: plot_size)
 |> Vl.data_from_values(imgData)
 |> Vl.mark(:rect)
 |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
@@ -306,22 +318,25 @@ plot1 = Vl.new(width: 300, height: 300)
 |> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
   domain: [-1,1],
   scheme: [expr: "col"],
-}, legend:  %{height: 400, orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
+}, legend:  %{orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
 |> Vl.transform(filter: "datum.frame == frame")
 
-plot2 = Vl.new(width: 300, height: 300)
+plot2 = Vl.new(width: plot_size, height: plot_size)
 |> Vl.data_from_values(imgData)
 |> Vl.mark(:rect)
 |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
 |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
 |> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
-  domain: [-1,1],
-  scheme: "greys",
-}, legend:  %{height: 400, orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
-|> Vl.transform(filter: "datum.frame == 10")
+  domain: [-1, 1],
+  scheme: "greys"
+}, legend: %{orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
+|> Vl.transform(filter: "datum.frame == 30")
 
 
-Vl.new()
+
+Vl.new(
+  title: "Two images side by side",
+  config: [legend: [gradient_length: plot_size]])
 |> Vl.concat([plot1, plot2])
 |> Vl.param("frame", value: 1, bind: [input: :range, min: 1, max: elem(Nx.shape(img), 0), step: 1])
 |> Vl.param("col", value: :viridis, bind: [input: :select, options: [
@@ -336,5 +351,6 @@ Vl.new()
    :purplegreen, :pinkyellowgreen, :purpleorange, :redblue, :redgrey, :redyellowblue, 
    :redyellowgreen, :spectral, :rainbow, :sinebow
 ]])
-|> Vl.resolve(:scale, color: :independent)
+|> Vl.resolve(:scale, color: :independent, stroke: :independent, fill: :independent)
+
 ```
