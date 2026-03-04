@@ -39,32 +39,37 @@ Kino.nothing()
 
 ```elixir
 rad = 32
-diam = 2*rad
+diam = 2 * rad
 
-dx = Nx.iota({1,diam,1})
-  |> Nx.broadcast({diam,diam,1})
+dx =
+  Nx.iota({1, diam, 1})
+  |> Nx.broadcast({diam, diam, 1})
   |> Nx.subtract(rad)
-dx2 = dx|> Nx.pow(2)
 
-dy = Nx.iota({diam,1,1})
-  |> Nx.broadcast({diam,diam,1})
+dx2 = dx |> Nx.pow(2)
+
+dy =
+  Nx.iota({diam, 1, 1})
+  |> Nx.broadcast({diam, diam, 1})
   |> Nx.subtract(rad)
+
 dy2 = dy |> Nx.pow(2)
 
-circle_radius = Nx.add(dx2, dy2) |> Nx.sqrt() 
-  |> Nx.reshape({1, diam,diam, 1})
-
+circle_radius =
+  Nx.add(dx2, dy2)
+  |> Nx.sqrt()
+  |> Nx.reshape({1, diam, diam, 1})
 
 circle_angle = Nx.atan2(dy, dx)
 circle2_angle = Nx.atan2(dy2, dx2)
 
 circle_angle
 |> Tucan.imshow(
-  width: 400, 
-  height: 400, 
-  origin: :upper, 
-  show_scale: false, 
-  tooltip: true, 
+  width: 400,
+  height: 400,
+  origin: :upper,
+  show_scale: false,
+  tooltip: true,
   # color_schemes:
   # https://vega.github.io/vega/docs/schemes/
   # :accent, :category10, :category20, :category20b, :category20c, :observable10, 
@@ -89,14 +94,10 @@ circle_angle
 ```
 
 ```elixir
-
-```
-
-```elixir
 xs = Nx.linspace(0, 10, n: 100)
 ys = Nx.sin(xs) |> Nx.multiply(100)
 
-Tucan.new([x: xs, y: ys])
+Tucan.new(x: xs, y: ys)
 |> Tucan.lineplot("x", "y")
 ```
 
@@ -117,29 +118,34 @@ x_values = Nx.linspace(0, 10, n: 100)
 sin_values = Nx.sin(x_values) |> Nx.multiply(100)
 cos_values = Nx.cos(x_values) |> Nx.multiply(50)
 
+sin_data =
+  Enum.zip_with(
+    Nx.to_flat_list(x_values),
+    Nx.to_flat_list(sin_values),
+    &%{x: &1, y: &2, series: :sin}
+  )
 
-sin_data = Enum.zip_with(
-  Nx.to_flat_list(x_values),
-  Nx.to_flat_list(sin_values), 
-  &%{x: &1, y: &2, series: :sin}
-)
-
-cos_data = Enum.zip_with(
-  Nx.to_flat_list(x_values),
-  Nx.to_flat_list(cos_values), 
-  &%{x: &1, y: &2, series: :cos}
-)
+cos_data =
+  Enum.zip_with(
+    Nx.to_flat_list(x_values),
+    Nx.to_flat_list(cos_values),
+    &%{x: &1, y: &2, series: :cos}
+  )
 
 Vl.new(width: 600, height: 400)
 |> Vl.data_from_values(sin_data ++ cos_data)
 |> Vl.mark(:line, color: :red, stroke_dash: [5, 2])
 |> Vl.encode(:x, field: :x, type: :quantitative)
 |> Vl.encode(:y, field: :y, type: :quantitative)
-|> Vl.encode(:color, field: :series, type: :nominal, 
+|> Vl.encode(:color,
+  field: :series,
+  type: :nominal,
   scale: %{domain: [:sin, :cos], range: ["red", "blue"]}
 )
-|> Vl.encode(:stroke_dash, field: :series, type: :nominal, 
-    scale: %{domain: [:sin, :cos], range: [[1,0], [10,5]]}
+|> Vl.encode(:stroke_dash,
+  field: :series,
+  type: :nominal,
+  scale: %{domain: [:sin, :cos], range: [[1, 0], [10, 5]]}
 )
 ```
 
@@ -151,31 +157,41 @@ data = [
   %{category: "A", series: "S1", value: 5},
   %{category: "A", series: "S2", value: 3},
   %{category: "B", series: "S1", value: 6},
-  %{category: "B", series: "S2", value: 2},
+  %{category: "B", series: "S2", value: 2}
 ]
 
 Vl.new(width: 400, height: 300)
 |> Vl.data_from_values(data)
 |> Vl.mark(:bar)
-|> Vl.encode(:x, field: :category, type: :nominal)       # main category
-|> Vl.encode(:x_offset, field: :series)                 # series offset → bars next to each other
-|> Vl.encode(:y, field: :value, type: :quantitative)    # height
-|> Vl.encode(:color, field: :series)                    # color by series
+# main category
+|> Vl.encode(:x, field: :category, type: :nominal)
+# series offset → bars next to each other
+|> Vl.encode(:x_offset, field: :series)
+# height
+|> Vl.encode(:y, field: :value, type: :quantitative)
+# color by series
+|> Vl.encode(:color, field: :series)
 ```
 
 ```elixir
 Vl.new()
 |> Vl.data_from_url("https://vega.github.io/editor/data/cars.json")
-|> Vl.param("size", value: 20, bind: [name: "Dot Size", input: :range, min: 100, max: 1000, step: 10])
+|> Vl.param("size",
+  value: 20,
+  bind: [name: "Dot Size", input: :range, min: 100, max: 1000, step: 10]
+)
 |> Vl.param("mpg", value: 0, bind: [name: "min M/G", input: :range, min: 0, max: 200, step: 1])
 |> Vl.param("ps", value: 0, bind: [name: "min PS", input: :range, min: 0, max: 200, step: 1])
 |> Vl.param("color", value: "red", bind: [name: "Dot Color", input: :color])
 |> Vl.mark(:circle, size: [expr: "size"], color: [expr: "color"])
-|> Vl.encode_field(:x, "Horsepower", selection: [expr: "choice"], type: :quantitative, scale: [domain: [0, 300]])
-|> Vl.encode_field(:y, "Miles_per_Gallon", type: :quantitative, scale: [domain: [0,50]])
+|> Vl.encode_field(:x, "Horsepower",
+  selection: [expr: "choice"],
+  type: :quantitative,
+  scale: [domain: [0, 300]]
+)
+|> Vl.encode_field(:y, "Miles_per_Gallon", type: :quantitative, scale: [domain: [0, 50]])
 |> Vl.transform(filter: "datum.Miles_per_Gallon > mpg")
 |> Vl.transform(filter: "datum.Horsepower > ps")
-
 ```
 
 ```elixir
@@ -202,7 +218,6 @@ Vl.new(width: 300, height: 300)
 |> Vl.encode(:x, field: :x, type: :ordinal)
 |> Vl.encode(:y, field: :y, type: :ordinal)
 |> Vl.encode(:color, field: :color, type: :nominal, scale: nil)
-
 ```
 
 ```elixir
@@ -212,18 +227,21 @@ width = 9
 height = 9
 frames = 50
 
-data = for x <- 0..width, y <- 0..height, f <- 0..frames do 
-  %{
-      x: x, 
-      y: y, 
-      color: Colorex.rgb(%HSL{
-        hue: :math.fmod((x+1)*width+(y+1)*f + (1+f/32)*width*height, 360), 
-        saturation: 0.5, 
-        lightness: 0.5
-      }) |> to_string(), 
+data =
+  for x <- 0..width, y <- 0..height, f <- 0..frames do
+    %{
+      x: x,
+      y: y,
+      color:
+        Colorex.rgb(%HSL{
+          hue: :math.fmod((x + 1) * width + (y + 1) * f + (1 + f / 32) * width * height, 360),
+          saturation: 0.5,
+          lightness: 0.5
+        })
+        |> to_string(),
       frame: f
-  }
-end
+    }
+  end
 
 plot_size = 300
 
@@ -235,21 +253,78 @@ Vl.new(width: plot_size, height: plot_size, title: "Animated Gradient")
 |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
 |> Vl.encode(:color, field: :color, scale: nil)
 |> Vl.transform(filter: "datum.frame == frame")
-
 ```
 
 ```elixir
 color_schemes = [
-  :accent, :category10, :category20, :category20b, :category20c, :observable10, 
-  :dark2, :paired, :pastel1, :pastel2, :set1, :set2, :set3, :tableau10, :tableau20, 
-   :blues, :tealblues, :teals, :greens, :browns, :oranges, :reds, :purples, :warmgreys, 
-   :greys, :viridis, :magma, :inferno, :plasma, :cividis, :turbo, :bluegreen, :bluepurple, 
-   :goldgreen, :goldorange, :goldred, :greenblue, :orangered, :purplebluegreen, 
-   :purpleblue, :purplered, :redpurple, :yellowgreenblue, :yellowgreen, :yelloworangebrown, 
-   :yelloworangered, :darkblue, :darkgold, :darkgreen, :darkmulti, :darkred, :lightgreyred, 
-   :lightgreyteal, :lightmulti, :lightorange, :lighttealblue, :blueorange, :brownbluegreen, 
-   :purplegreen, :pinkyellowgreen, :purpleorange, :redblue, :redgrey, :redyellowblue, 
-   :redyellowgreen, :spectral, :rainbow, :sinebow
+  :accent,
+  :category10,
+  :category20,
+  :category20b,
+  :category20c,
+  :observable10,
+  :dark2,
+  :paired,
+  :pastel1,
+  :pastel2,
+  :set1,
+  :set2,
+  :set3,
+  :tableau10,
+  :tableau20,
+  :blues,
+  :tealblues,
+  :teals,
+  :greens,
+  :browns,
+  :oranges,
+  :reds,
+  :purples,
+  :warmgreys,
+  :greys,
+  :viridis,
+  :magma,
+  :inferno,
+  :plasma,
+  :cividis,
+  :turbo,
+  :bluegreen,
+  :bluepurple,
+  :goldgreen,
+  :goldorange,
+  :goldred,
+  :greenblue,
+  :orangered,
+  :purplebluegreen,
+  :purpleblue,
+  :purplered,
+  :redpurple,
+  :yellowgreenblue,
+  :yellowgreen,
+  :yelloworangebrown,
+  :yelloworangered,
+  :darkblue,
+  :darkgold,
+  :darkgreen,
+  :darkmulti,
+  :darkred,
+  :lightgreyred,
+  :lightgreyteal,
+  :lightmulti,
+  :lightorange,
+  :lighttealblue,
+  :blueorange,
+  :brownbluegreen,
+  :purplegreen,
+  :pinkyellowgreen,
+  :purpleorange,
+  :redblue,
+  :redgrey,
+  :redyellowblue,
+  :redyellowgreen,
+  :spectral,
+  :rainbow,
+  :sinebow
 ]
 
 Kino.nothing()
@@ -262,103 +337,158 @@ width = 20
 height = 10
 frames = 120
 
-data = for x <- 0..width, y <- 0..height, f <- 1..frames do 
-  dx = (x-width/2)
-  dy = (y-height/2)
-  d = :math.sqrt(:math.pow(dx, 2) + :math.pow(dy, 2))
-  %{
-      x: x, 
-      y: y, 
-      color: if(d*f == 0, do: 1, else: :math.sin(10*(f)/3/frames*d+2) / d), 
-      frame: f
-  }
-end
+data =
+  for x <- 0..width, y <- 0..height, f <- 1..frames do
+    dx = x - width / 2
+    dy = y - height / 2
+    d = :math.sqrt(:math.pow(dx, 2) + :math.pow(dy, 2))
 
-plot_size = 200
+    %{
+      x: x,
+      y: y,
+      color: if(d * f == 0, do: 1, else: :math.sin(10 * f / 3 / frames * d + 2) / d),
+      frame: f
+    }
+  end
+
+plot_size = 240
 
 Vl.new(
-  title: "Animated Sinc Wave", 
-  height: plot_size, width: plot_size*width/height, 
+  title: "Animated Sinc Wave",
+  height: plot_size,
+  width: plot_size * width / height,
   config: [legend: [gradient_length: plot_size]]
 )
 |> Vl.data_from_values(data)
 |> Vl.mark(:rect)
 |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
 |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
-|> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
-  domain: [-1, 1], 
-  scheme: [expr: "col"],
-}, legend:  %{height: 400, orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
+|> Vl.encode(:color,
+  field: :color,
+  type: :quantitative,
+  scale: %{
+    domain: [-1, 1],
+    scheme: [expr: "col"]
+  },
+  legend: %{
+    height: 400,
+    orient: :right,
+    title: nil,
+    offset: 10,
+    padding: 0,
+    titleFontSize: 30,
+    labelFontSize: 20
+  }
+)
 |> Vl.param("frame", value: 1, bind: [name: "Frame", input: :range, min: 1, max: frames, step: 1])
-
-|> Vl.param("col", value: :blues, bind: [name: "Color Scheme", input: :select, options: color_schemes])
+|> Vl.param("col",
+  value: :blues,
+  bind: [name: "Color Scheme", input: :select, options: color_schemes]
+)
 |> Vl.transform(filter: "datum.frame == frame")
 ```
 
 ```elixir
 rad = 12
-dx = Nx.iota({rad*2,1}) |> Nx.subtract(rad) |> Nx.divide(rad)
-dy = Nx.iota({1,rad*2}) |> Nx.subtract(rad) |> Nx.divide(rad)
+dx = Nx.iota({rad * 2, 1}) |> Nx.subtract(rad) |> Nx.divide(rad)
+dy = Nx.iota({1, rad * 2}) |> Nx.subtract(rad) |> Nx.divide(rad)
 dx2 = Nx.pow(dx, 2)
 dy2 = Nx.pow(dy, 2)
 rad = Nx.add(dx2, dy2) |> Nx.sqrt()
 angle = Nx.atan2(dy, dx)
-freq = Nx.iota({70,1,1}) 
-  |> Nx.divide(10) 
-  |> Nx.multiply(:math.pi)
+
+freq =
+  Nx.iota({70, 1, 1})
+  |> Nx.divide(10)
+  |> Nx.multiply(:math.pi())
 
 freq_sqrt = Nx.sqrt(freq)
 
-img = rad 
-  |> Nx.multiply(freq_sqrt) 
-  |> Nx.add(angle) 
-  |> Nx.subtract(freq) 
+img =
+  rad
+  |> Nx.multiply(freq_sqrt)
+  |> Nx.add(angle)
+  |> Nx.subtract(freq)
   |> Nx.sin()
 
-imgData = Nx.to_list(img) 
-  |> Enum.with_index() 
-  |> Enum.flat_map(fn {frame, fi} -> 
+imgData =
+  Nx.to_list(img)
+  |> Enum.with_index()
+  |> Enum.flat_map(fn {frame, fi} ->
     frame
-     |> Enum.with_index() 
-      |> Enum.flat_map(fn 
-        {row, ri} -> Enum.with_index(row) |> Enum.map(fn {v, ci} -> 
-          %{x: ci, y: ri, color: v, frame: fi + 1}  
-        end) 
-      end)
+    |> Enum.with_index()
+    |> Enum.flat_map(fn
+      {row, ri} ->
+        Enum.with_index(row)
+        |> Enum.map(fn {v, ci} ->
+          %{x: ci, y: ri, color: v, frame: fi + 1}
+        end)
+    end)
   end)
 
-plot_size = 300
+plot_size = 360
 
-plot1 = Vl.new(width: plot_size, height: plot_size, title: "Dynamic Frame")
-|> Vl.data_from_values(imgData)
-|> Vl.mark(:rect)
-|> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
-|> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
-|> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
-  domain: [-1,1],
-  scheme: [expr: "col"],
-}, legend:  %{orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
-|> Vl.transform(filter: "datum.frame == frame")
+plot1 =
+  Vl.new(width: plot_size, height: plot_size, title: "Dynamic Frame")
+  |> Vl.data_from_values(imgData)
+  |> Vl.mark(:rect)
+  |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
+  |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
+  |> Vl.encode(:color,
+    field: :color,
+    type: :quantitative,
+    scale: %{
+      domain: [-1, 1],
+      scheme: [expr: "col"]
+    },
+    legend: %{
+      orient: :right,
+      title: nil,
+      offset: 10,
+      padding: 0,
+      titleFontSize: 30,
+      labelFontSize: 20
+    }
+  )
+  |> Vl.transform(filter: "datum.frame == frame")
 
-plot2 = Vl.new(width: plot_size, height: plot_size, title: "Static Frame")
-|> Vl.data_from_values(imgData)
-|> Vl.mark(:rect)
-|> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
-|> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
-|> Vl.encode(:color, field: :color, type: :quantitative, scale: %{
-  domain: [-1, 1],
-  scheme: "greys"
-}, legend: %{orient: :right, title: nil, offset: 10, padding: 0, titleFontSize: 30, labelFontSize: 20})
-|> Vl.transform(filter: "datum.frame == 30")
+plot2 =
+  Vl.new(width: plot_size, height: plot_size, title: "Static Frame")
+  |> Vl.data_from_values(imgData)
+  |> Vl.mark(:rect)
+  |> Vl.encode(:x, field: :x, type: :ordinal, axis: nil)
+  |> Vl.encode(:y, field: :y, type: :ordinal, axis: nil)
+  |> Vl.encode(:color,
+    field: :color,
+    type: :quantitative,
+    scale: %{
+      domain: [-1, 1],
+      scheme: "greys"
+    },
+    legend: %{
+      orient: :right,
+      title: nil,
+      offset: 10,
+      padding: 0,
+      titleFontSize: 30,
+      labelFontSize: 20
+    }
+  )
+  |> Vl.transform(filter: "datum.frame == 30")
 
-
-
-combined_plot = Vl.new(
-  title: "Two images side by side",
-  config: [legend: [gradient_length: plot_size]])
-|> Vl.concat([plot1, plot2])
-|> Vl.param("frame", value: 1, bind: [name: "Frame", input: :range, min: 1, max: elem(Nx.shape(img), 0), step: 1])
-|> Vl.param("col", value: :viridis, bind: [name: "Color Scheme", input: :select, options: color_schemes])
-|> Vl.resolve(:scale, color: :independent, stroke: :independent, fill: :independent)
-
+combined_plot =
+  Vl.new(
+    title: "Two images side by side",
+    config: [legend: [gradient_length: plot_size]]
+  )
+  |> Vl.concat([plot1, plot2])
+  |> Vl.param("frame",
+    value: 1,
+    bind: [name: "Frame", input: :range, min: 1, max: elem(Nx.shape(img), 0), step: 1]
+  )
+  |> Vl.param("col",
+    value: :viridis,
+    bind: [name: "Color Scheme", input: :select, options: color_schemes]
+  )
+  |> Vl.resolve(:scale, color: :independent, stroke: :independent, fill: :independent)
 ```
