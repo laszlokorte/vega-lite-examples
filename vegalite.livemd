@@ -689,15 +689,15 @@ defmodule TensorPlot do
       bind: if(max_frame > 1, do: [name: "Frame", input: :range, min: 1, max: max_frame, step: 1])
     )
     |> Vl.param("col",
-      value: Keyword.get(args, :cmap, :viridris),
+      value: Keyword.get(args, :cmap, :viridis),
       bind:
         Keyword.get(args, :cmaps, @color_schemes)
         |> case do
-          [_ | _] = opts ->
+          [f | _] = opts ->
             [
               name: "Color Scheme",
               input: :select,
-              options: [Keyword.get(args, :cmap, :viridris) | opts]
+              options: [Keyword.get(args, :cmap, f) | opts]
             ]
 
           _ ->
