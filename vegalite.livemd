@@ -681,9 +681,10 @@ defmodule TensorPlot do
 
     Vl.new(
       title: Keyword.get(args, :titel, "Images"),
-      config: [legend: [gradient_length: plot_size]]
+      config: [legend: [gradient_length: plot_size]],
+      columns: Keyword.get(args, :columns, nil)
     )
-    |> Vl.concat(plots)
+    |> Vl.concat(plots, Keyword.get(args, :concat, :wrappable))
     |> Vl.param("frame",
       value: 1,
       bind: if(max_frame > 1, do: [name: "Frame", input: :range, min: 1, max: max_frame, step: 1])
@@ -709,4 +710,75 @@ defmodule TensorPlot do
 end
 
 Kino.nothing()
+```
+
+```elixir
+rad = 12
+dx = Nx.iota({rad * 2, 1}) |> Nx.subtract(rad) |> Nx.divide(rad)
+dy = Nx.iota({1, rad * 2}) |> Nx.subtract(rad) |> Nx.divide(rad)
+dx2 = Nx.pow(dx, 2)
+dy2 = Nx.pow(dy, 2)
+rad = Nx.add(dx2, dy2) |> Nx.sqrt()
+angle = Nx.atan2(dy, dx)
+
+freq =
+  Nx.iota({70, 1, 1})
+  |> Nx.divide(10)
+  |> Nx.multiply(:math.pi())
+
+freq_sqrt = Nx.sqrt(freq)
+
+swirl =
+  rad
+  |> Nx.multiply(freq_sqrt)
+  |> Nx.add(angle)
+  |> Nx.subtract(freq)
+  |> Nx.sin()
+
+colored =
+  Nx.stack([
+    rad
+    |> Nx.multiply(10)
+    |> Nx.add(angle |> Nx.multiply(1))
+    |> Nx.sin(),
+    rad
+    |> Nx.multiply(10)
+    |> Nx.add(angle |> Nx.multiply(3))
+    |> Nx.sin(),
+    rad
+    |> Nx.multiply(10)
+    |> Nx.add(angle |> Nx.multiply(2))
+    |> Nx.sin()
+  ])
+  |> Nx.add(1)
+  |> Nx.divide(2)
+
+freq2 =
+  Nx.iota({3, 1, 1})
+  |> Nx.multiply(2)
+  |> Nx.multiply(:math.pi())
+
+freq2_sqrt = Nx.sqrt(freq2)
+
+img2 =
+  rad
+  |> Nx.multiply(freq2_sqrt)
+  |> Nx.add(angle)
+  |> Nx.subtract(freq2)
+  |> Nx.sin()
+
+Kino.nothing()
+```
+
+```elixir
+[swirl, rad, Nx.pow(angle, 2) |> Nx.divide(:math.tau()), colored, img2]
+|> TensorPlot.plot(
+  concat: :wrappable,
+  columns: 3,
+  cmap: :viridis,
+  cmaps: ["viridis", "blues", "greys"],
+  size: 215,
+  titel: "three images",
+  labels: ["swirl", "rad", "angle"]
+)
 ```
