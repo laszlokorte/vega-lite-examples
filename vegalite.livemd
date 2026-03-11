@@ -782,3 +782,40 @@ Kino.nothing()
   labels: ["Swirl", "Radius", "Angle", "Colored Swirl", "RGB Tornado"]
 )
 ```
+
+```elixir
+res = 16
+
+kx =
+  Nx.iota({res, res, 1, res, res}, axis: 0)
+  |> Nx.reshape({res * res, 1, res, res})
+
+ky =
+  Nx.iota({res, res, 1, res, res}, axis: 1)
+  |> Nx.reshape({res * res, 1, res, res})
+  |> Nx.multiply(kx)
+  |> Nx.remainder(res)
+
+x = Nx.iota({res * res, 1, res, res}, axis: 2)
+y = Nx.iota({res * res, 1, res, res}, axis: 3)
+
+a =
+  Nx.multiply(x, kx)
+  |> Nx.add(Nx.multiply(y, ky))
+  |> Nx.divide(res)
+  |> Nx.multiply(2 * :math.pi())
+
+basis_x = a |> Nx.cos()
+basis_y = a |> Nx.sin()
+
+[x, y, basis_x, basis_y]
+|> TensorPlot.plot(
+  concat: :wrappable,
+  columns: 3,
+  cmap: :viridis,
+  cmaps: ["viridis", "blues", "greys"],
+  size: 215,
+  titel: "Composition of a Swirl",
+  labels: ["Freq", "X", "Y", "Cos", "Sin"]
+)
+```
