@@ -695,10 +695,11 @@ defmodule TensorPlot do
         Keyword.get(args, :cmaps, @color_schemes)
         |> case do
           [f | _] = opts ->
+            cmap = Keyword.get(args, :cmap, f)
             [
               name: "Color Scheme",
               input: :select,
-              options: [Keyword.get(args, :cmap, f) | opts]
+              options: [cmap | opts |> Enum.reject(&(to_string(&1) == to_string(cmap)))]
             ]
 
           _ ->
@@ -716,21 +717,32 @@ Kino.nothing()
 defmodule Swirl do
   import Nx.Defn
 
+  # defn expects non-tensor args to be passed as arg list
   defn gen(opts \\ []) do
-    opts = keyword!(opts, rad: 6, frames: 10)
+    # make Nx.sqrt() and Nx.sin() available without namespace
+    import Nx
+
+    # we need to use Nx.Constants.pi instead of :math.pi() inside defn
+    import Nx.Constants, only: [pi: 0]
+
+    opts = keyword!(opts, rad: 6, frames: 10, freq: 10, phase: 0)
     rad = opts[:rad]
+    freq = opts[:freq]
     frames = opts[:frames]
-    dx = (Nx.iota({rad * 2, 1}) - rad) / rad
-    dy = (Nx.iota({1, rad * 2}) - rad) / rad
+    phase = opts[:phase]
+
+    # tensor calculations can be done with operators inside defn
+    dx = iota({rad * 2, 1}) / rad - 1
+    dy = iota({1, rad * 2}) / rad - 1
     dx2 = dx ** 2
     dy2 = dy ** 2
-    rad = Nx.sqrt(dx2 + dy2)
-    angle = Nx.atan2(dy, dx)
+    rad = sqrt(dx2 + dy2)
+    angle = atan2(dy, dx)
 
-    freq =
-      Nx.iota({frames, 1, 1}) / 10 * Nx.Constants.pi()
+    freqs =
+      (iota({frames, 1, 1}) / frames + phase) * 2 * pi() * freq
 
-    Nx.sin(Nx.sqrt(freq) * rad + angle - freq)
+    cos(sqrt(freqs) * rad + angle - freqs)
   end
 end
 
@@ -742,45 +754,24 @@ dy2 = Nx.pow(dy, 2)
 radius = Nx.add(dx2, dy2) |> Nx.sqrt()
 angle = Nx.atan2(dy, dx)
 
-swirl = Swirl.gen(rad: 12, frames: 20)
+swirl = Swirl.gen(rad: rad, frames: 60, freq: 1, phase: 0)
 
 colored =
-  Nx.stack([
-    radius
-    |> Nx.multiply(10)
-    |> Nx.add(angle |> Nx.multiply(1))
-    |> Nx.sin(),
-    radius
-    |> Nx.multiply(10)
-    |> Nx.add(angle |> Nx.multiply(3))
-    |> Nx.sin(),
-    radius
-    |> Nx.multiply(10)
-    |> Nx.add(angle |> Nx.multiply(2))
-    |> Nx.sin()
-  ])
+  Nx.stack(for(d <- 0..2, do: Swirl.gen(rad: rad, frames: 1, freq: 4 * d, phase: 0.5)), axis: 1)
   |> Nx.add(1)
   |> Nx.divide(2)
 
-freq2 =
-  Nx.iota({3, 1, 1})
-  |> Nx.multiply(2)
-  |> Nx.multiply(:math.pi())
-
-freq2_sqrt = Nx.sqrt(freq2)
-
-img2 =
-  radius
-  |> Nx.multiply(freq2_sqrt)
-  |> Nx.add(angle)
-  |> Nx.subtract(freq2)
-  |> Nx.sin()
+tornado =
+  Nx.stack(
+    for(d <- 0..2, do: Swirl.gen(rad: rad, frames: 60, freq: 1, phase: 0.2 * d)),
+    axis: 1
+  )
 
 Kino.nothing()
 ```
 
 ```elixir
-[swirl, radius, angle, colored, img2]
+[swirl, radius, angle, colored, tornado]
 |> TensorPlot.plot(
   concat: :wrappable,
   columns: 3,
@@ -788,6 +779,6 @@ Kino.nothing()
   cmaps: ["viridis", "blues", "greys"],
   size: 215,
   titel: "Composition of a Swirl",
-  labels: ["swirl", "radus", "angle", "colored swirl", "rgb tornado"]
+  labels: ["Swirl", "Radius", "Angle", "Colored Swirl", "RGB Tornado"]
 )
 ```
