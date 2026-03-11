@@ -596,7 +596,7 @@ defmodule TensorPlot do
       for {t, ti} <- tensors |> Enum.with_index() do
         {frames, channels, _width, _height} = Nx.shape(t)
         {enc, _bits} = Nx.type(t)
-        multiplier = if(enc==:f, do: 255, else: 1)
+        multiplier = if(enc == :f, do: 255, else: 1)
 
         imgData =
           t
@@ -713,39 +713,48 @@ Kino.nothing()
 ```
 
 ```elixir
+defmodule Swirl do
+  import Nx.Defn
+
+  defn gen(opts \\ []) do
+    opts = keyword!(opts, rad: 6, frames: 10)
+    rad = opts[:rad]
+    frames = opts[:frames]
+    dx = (Nx.iota({rad * 2, 1}) - rad) / rad
+    dy = (Nx.iota({1, rad * 2}) - rad) / rad
+    dx2 = dx ** 2
+    dy2 = dy ** 2
+    rad = Nx.sqrt(dx2 + dy2)
+    angle = Nx.atan2(dy, dx)
+
+    freq =
+      Nx.iota({frames, 1, 1}) / 10 * Nx.Constants.pi()
+
+    Nx.sin(Nx.sqrt(freq) * rad + angle - freq)
+  end
+end
+
 rad = 12
 dx = Nx.iota({rad * 2, 1}) |> Nx.subtract(rad) |> Nx.divide(rad)
 dy = Nx.iota({1, rad * 2}) |> Nx.subtract(rad) |> Nx.divide(rad)
 dx2 = Nx.pow(dx, 2)
 dy2 = Nx.pow(dy, 2)
-rad = Nx.add(dx2, dy2) |> Nx.sqrt()
+radius = Nx.add(dx2, dy2) |> Nx.sqrt()
 angle = Nx.atan2(dy, dx)
 
-freq =
-  Nx.iota({70, 1, 1})
-  |> Nx.divide(10)
-  |> Nx.multiply(:math.pi())
-
-freq_sqrt = Nx.sqrt(freq)
-
-swirl =
-  rad
-  |> Nx.multiply(freq_sqrt)
-  |> Nx.add(angle)
-  |> Nx.subtract(freq)
-  |> Nx.sin()
+swirl = Swirl.gen(rad: 12, frames: 20)
 
 colored =
   Nx.stack([
-    rad
+    radius
     |> Nx.multiply(10)
     |> Nx.add(angle |> Nx.multiply(1))
     |> Nx.sin(),
-    rad
+    radius
     |> Nx.multiply(10)
     |> Nx.add(angle |> Nx.multiply(3))
     |> Nx.sin(),
-    rad
+    radius
     |> Nx.multiply(10)
     |> Nx.add(angle |> Nx.multiply(2))
     |> Nx.sin()
@@ -761,7 +770,7 @@ freq2 =
 freq2_sqrt = Nx.sqrt(freq2)
 
 img2 =
-  rad
+  radius
   |> Nx.multiply(freq2_sqrt)
   |> Nx.add(angle)
   |> Nx.subtract(freq2)
@@ -771,14 +780,14 @@ Kino.nothing()
 ```
 
 ```elixir
-[swirl, rad, Nx.pow(angle, 2) |> Nx.divide(:math.tau()), colored, img2]
+[swirl, radius, angle, colored, img2]
 |> TensorPlot.plot(
   concat: :wrappable,
   columns: 3,
   cmap: :viridis,
   cmaps: ["viridis", "blues", "greys"],
   size: 215,
-  titel: "three images",
-  labels: ["swirl", "rad", "angle"]
+  titel: "Composition of a Swirl",
+  labels: ["swirl", "radus", "angle", "colored swirl", "rgb tornado"]
 )
 ```
