@@ -2,13 +2,13 @@
 
 ```elixir
 Mix.install([
-  {:nx, "~> 0.10.0"},
+  {:nx, "~> 0.11.0"},
   {:kino, "~> 0.18.0"},
   {:image, "~> 0.62.1"},
   {:vega_lite, "~> 0.1.11"},
   {:kino_vega_lite, "~> 0.1.13"},
   {:tucan, "~> 0.5.1"},
-  {:kino_zoetrope, "~> 0.12.0"},
+  {:kino_zoetrope, "~> 0.16.0"},
   {:colorex, "~> 1.0"}
 ])
 
@@ -786,18 +786,12 @@ Kino.nothing()
 ```elixir
 res = 16
 
-kx =
-  Nx.iota({res, res, 1, res, res}, axis: 0)
-  |> Nx.reshape({res * res, 1, res, res})
+kx = 2
 
-ky =
-  Nx.iota({res, res, 1, res, res}, axis: 1)
-  |> Nx.reshape({res * res, 1, res, res})
-  |> Nx.multiply(kx)
-  |> Nx.remainder(res)
+ky = 2
 
-x = Nx.iota({res * res, 1, res, res}, axis: 2)
-y = Nx.iota({res * res, 1, res, res}, axis: 3)
+x = Nx.iota({1, 1, res, res}, axis: 2)
+y = Nx.iota({1, 1, res, res}, axis: 3)
 
 a =
   Nx.multiply(x, kx)
@@ -811,7 +805,7 @@ basis_y = a |> Nx.sin()
 [x, y, basis_x, basis_y]
 |> TensorPlot.plot(
   concat: :wrappable,
-  columns: 3,
+  columns: 2,
   cmap: :viridis,
   cmaps: ["viridis", "blues", "greys"],
   size: 215,
