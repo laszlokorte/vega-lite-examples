@@ -662,8 +662,8 @@ defmodule TensorPlot do
               type: :quantitative,
               scale: %{
                 domain: [
-                  Nx.round(Nx.reduce_min(t)) |> Nx.to_number(),
-                  Nx.round(Nx.reduce_max(t)) |> Nx.to_number()
+                  Keyword.get(args, :vmin, Nx.round(Nx.reduce_min(t)) |> Nx.to_number()),
+                  Keyword.get(args, :vmax, Nx.round(Nx.reduce_max(t)) |> Nx.to_number()),
                 ],
                 scheme: [expr: "col"]
               },
@@ -812,4 +812,58 @@ basis_y = a |> Nx.sin()
   titel: "Composition of a Swirl",
   labels: ["Freq", "X", "Y", "Cos", "Sin"]
 )
+```
+
+```elixir
+res = 16
+
+x = Nx.iota({1, 1, res, res}, axis: 2)
+y = Nx.iota({1, 1, res, res}, axis: 3)
+
+form =
+  Kino.Control.form(
+    [
+      freqA: Kino.Input.range("Freq A", min: 0, max: 16, value: 0),
+      freqB: Kino.Input.range("Freq B", min: 0, max: 16, value: 0)
+    ],
+    report_changes: true
+  )
+
+output = Kino.Frame.new()
+
+plot = fn event ->
+  kx = event.data.freqA
+  ky = event.data.freqB
+
+  a =
+    Nx.multiply(x, kx)
+    |> Nx.add(Nx.multiply(y, ky))
+    |> Nx.divide(res)
+    |> Nx.multiply(2 * :math.pi())
+
+  basis_x = a |> Nx.cos()
+  basis_y = a |> Nx.sin()
+
+  [basis_x, basis_y]
+  |> TensorPlot.plot(
+    concat: :wrappable,
+    columns: 2,
+    vmin: -1,
+    vmax: 1,
+    cmap: :viridis,
+    cmaps: ["viridis", "blues", "greys"],
+    size: 215,
+    titel: "Discrete Fourier Basis",
+    labels: ["Cos", "Sin"]
+  )
+  |> then(&Kino.Frame.render(output, &1))
+end
+
+plot.(%{data: %{freqA: 0, freqB: 0}})
+
+form
+|> Kino.Control.stream()
+|> Kino.listen(plot)
+
+Kino.Layout.grid([form, output], columns: 1)
 ```
