@@ -9,13 +9,19 @@ Mix.install([
   {:kino_vega_lite, "~> 0.1.13"},
   {:tucan, "~> 0.5.1"},
   {:kino_zoetrope, "~> 0.16.0"},
-  {:colorex, "~> 1.0"}
+  {:colorex, "~> 1.0"},
+  {:fine, "0.1.4"},
+  {:exla, "~> 0.11.0"}
 ])
 
 Kino.nothing()
 ```
 
 ## Section
+
+```elixir
+Nx.global_default_backend(EXLA.Backend)
+```
 
 ```elixir
 alias VegaLite, as: Vl
@@ -663,7 +669,7 @@ defmodule TensorPlot do
               scale: %{
                 domain: [
                   Keyword.get(args, :vmin, Nx.round(Nx.reduce_min(t)) |> Nx.to_number()),
-                  Keyword.get(args, :vmax, Nx.round(Nx.reduce_max(t)) |> Nx.to_number()),
+                  Keyword.get(args, :vmax, Nx.round(Nx.reduce_max(t)) |> Nx.to_number())
                 ],
                 scheme: [expr: "col"]
               },
@@ -687,7 +693,16 @@ defmodule TensorPlot do
     |> Vl.concat(plots, Keyword.get(args, :concat, :wrappable))
     |> Vl.param("frame",
       value: 1,
-      bind: if(max_frame > 1, do: [name: "Frame", input: :range, min: 1, max: max_frame, step: 1])
+      bind:
+        if(max_frame > 1,
+          do: [
+            name: Keyword.get(args, :time_label, "Frame"),
+            input: :range,
+            min: 1,
+            max: max_frame,
+            step: 1
+          ]
+        )
     )
     |> Vl.param("col",
       value: Keyword.get(args, :cmap, :viridis),
@@ -696,6 +711,7 @@ defmodule TensorPlot do
         |> case do
           [f | _] = opts ->
             cmap = Keyword.get(args, :cmap, f)
+
             [
               name: "Color Scheme",
               input: :select,
@@ -777,7 +793,7 @@ Kino.nothing()
   columns: 3,
   cmap: :viridis,
   cmaps: ["viridis", "blues", "greys"],
-  size: 215,
+  size: 250,
   titel: "Composition of a Swirl",
   labels: ["Swirl", "Radius", "Angle", "Colored Swirl", "RGB Tornado"]
 )
